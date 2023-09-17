@@ -28,10 +28,16 @@ jobs:
         docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
         docker image push "ghcr.io/containerpak/base:main"
         sleep 60
+        
+    - name: Build/publish mesa
+      run: |
         docker image build -f mesa/Containerfile --tag ghcr.io/containerpak/mesa:main .
         docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
         docker image push "ghcr.io/containerpak/mesa:main"
         sleep 60
+        
+    - name: Build/publish gtk
+      run: |
         docker image build -f gtk/Containerfile --tag ghcr.io/containerpak/gtk:main .
         docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
         docker image push "ghcr.io/containerpak/gtk:main"
