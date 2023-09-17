@@ -1,4 +1,4 @@
 FROM ghcr.io/containerpak/base:main
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt update
-RUN apt install -y libegl1-mesa libgl1-mesa-glx libvulkan1 mesa-vulkan-drivers
+RUN apt install -y libegl1-mesa libgl1-mesa-glx libwayland-egl1-mesa libvulkan1 mesa-vulkan-drivers
