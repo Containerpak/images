@@ -1,0 +1,4 @@
+FROM ghcr.io/containerpak/base:main
+RUN apt update
+RUN apt install libgtk-4-dev libadwaita-1-dev libwebkit2gtk-4.1-dev libgweather-4-dev
+RUN apt install fonts-noto
