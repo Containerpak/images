@@ -1,0 +1,37 @@
+name: Build and publish
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+    REGISTRY_USER: ${{ github.actor }}
+    REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Build/publish base
+      run: |
+        docker image build -f base/Containerfile --tag ghcr.io/containerpak/base:main .
+        docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
+        docker image push "ghcr.io/containerpak/base:main"
+        sleep 60
+        docker image build -f mesa/Containerfile --tag ghcr.io/containerpak/mesa:main .
+        docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
+        docker image push "ghcr.io/containerpak/mesa:main"
+        sleep 60
+        docker image build -f gtk/Containerfile --tag ghcr.io/containerpak/gtk:main .
+        docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
+        docker image push "ghcr.io/containerpak/gtk:main"
