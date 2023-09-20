@@ -1,1 +1,1 @@
-FROM ghcr.io/vanilla-os/pico:main
+FROM ubuntu:23.04
