@@ -1,5 +1,6 @@
 FROM ghcr.io/containerpak/mesa:main
 ARG DEBIAN_FRONTEND=noninteractive
-RUN apt update
-RUN apt install -y libgtk-4-dev libadwaita-1-dev libwebkit2gtk-4.1-dev libgweather-4-dev
-RUN apt install -y dbus libdbus-1-3 libwayland-cursor0 librsvg2-dev fonts-noto
+RUN apt update && /
+    apt install -y libgtk-4-dev libadwaita-1-dev libwebkit2gtk-4.1-dev libgweather-4-dev /
+    dbus libdbus-1-3 libwayland-cursor0 librsvg2-dev fonts-noto && /
+    /usr/bin/cpak-clean-junk
