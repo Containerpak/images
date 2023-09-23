@@ -10,4 +10,5 @@ RUN echo '#!/bin/bash' > /usr/bin/cpak-clean-junk && \
     echo 'rm -rf /var/tmp/*' >> /usr/bin/cpak-clean-junk && \
     echo 'rm -rf /tmp/*' >> /usr/bin/cpak-clean-junk && \
     echo 'mkdir -p /var/cache/apt/archives/partial' >> /usr/bin/cpak-clean-junk && \
+    echo 'mkdir -p /var/log/apt' >> /usr/bin/cpak-clean-junk && \
     chmod +x /usr/bin/cpak-clean-junk
