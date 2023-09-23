@@ -5,18 +5,9 @@ RUN echo '#!/bin/bash' > /usr/bin/cpak-clean-junk && \
     echo 'export DEBIAN_FRONTEND=noninteractive' >> /usr/bin/cpak-clean-junk && \
     echo 'apt clean' >> /usr/bin/cpak-clean-junk && \
     echo 'apt autoremove -y' >> /usr/bin/cpak-clean-junk && \
-    echo 'rm -rf /var/lib/apt/lists/*' >> /usr/bin/cpak-clean-junk && \
-    echo 'rm -rf /usr/share/doc/*' >> /usr/bin/cpak-clean-junk && \
-    echo 'rm -rf /usr/share/info/*' >> /usr/bin/cpak-clean-junk && \
-    echo 'rm -rf /usr/share/linda/*' >> /usr/bin/cpak-clean-junk && \
-    echo 'rm -rf /usr/share/lintian/overrides/*' >> /usr/bin/cpak-clean-junk && \
-    echo 'rm -rf /usr/share/locale/*' >> /usr/bin/cpak-clean-junk && \
-    echo 'rm -rf /usr/share/man/*' >> /usr/bin/cpak-clean-junk && \
-    echo 'rm -rf /usr/share/doc/kde/HTML/*/*' >> /usr/bin/cpak-clean-junk && \
-    echo 'rm -rf /usr/share/gnome/help/*/*' >> /usr/bin/cpak-clean-junk && \
-    echo 'rm -rf /usr/share/locale/*' >> /usr/bin/cpak-clean-junk && \
-    echo 'rm -rf /usr/share/omf/*/*-*.emf' >> /usr/bin/cpak-clean-junk && \
-    echo 'rm -rf /var/cache' >> /usr/bin/cpak-clean-junk && \
+    echo 'rm -rf /var/cache/*' >> /usr/bin/cpak-clean-junk && \
     echo 'rm -rf /var/log' >> /usr/bin/cpak-clean-junk && \
-    echo 'rm -rf /tmp' >> /usr/bin/cpak-clean-junk && \
+    echo 'rm -rf /var/tmp/*' >> /usr/bin/cpak-clean-junk && \
+    echo 'rm -rf /tmp/*' >> /usr/bin/cpak-clean-junk && \
+    echo 'mkdir -p /var/cache/apt/archives/partial' >> /usr/bin/cpak-clean-junk && \
     chmod +x /usr/bin/cpak-clean-junk
