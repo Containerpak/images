@@ -1,5 +1,7 @@
 FROM ubuntu:23.04
 
+ARG DEBIAN_FRONTEND=noninteractive
+
 RUN echo '#!/bin/bash' > /usr/bin/cpak-clean-junk && \
     echo 'set -e' >> /usr/bin/cpak-clean-junk && \
     echo 'export DEBIAN_FRONTEND=noninteractive' >> /usr/bin/cpak-clean-junk && \
@@ -12,3 +14,8 @@ RUN echo '#!/bin/bash' > /usr/bin/cpak-clean-junk && \
     echo 'mkdir -p /var/cache/apt/archives/partial' >> /usr/bin/cpak-clean-junk && \
     echo 'mkdir -p /var/log/apt' >> /usr/bin/cpak-clean-junk && \
     chmod +x /usr/bin/cpak-clean-junk
+
+RUN dpkg --add-architecture i386 && \
+    apt update && \
+    apt install -y uidmap && \
+    /usr/bin/cpak-clean-junk
