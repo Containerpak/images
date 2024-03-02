@@ -5,12 +5,5 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 RUN dpkg --add-architecture i386 && \
     apt install -y \
-<<<<<<< HEAD:mesa/Containerfile
-    libegl1-mesa libgl1-mesa-glx libwayland-egl1-mesa libvulkan1 mesa-vulkan-drivers mesa-utils mesa-utils-extra libc6-i386 \
-    libgl1-mesa-dri:i386 libgl1:i386 libgl1-mesa-glx:i386 \
-    mesa-vulkan-drivers vulkan-tools && \
-    /usr/bin/cpak-clean-junk
-=======
     libegl1-mesa libgl1-mesa-glx libwayland-egl1-mesa libvulkan1 mesa-vulkan-drivers vulkan-tools mesa-utils mesa-utils-extra libc6-i386 \
     libgl1-mesa-dri:i386 libgl1:i386 libgl1-mesa-glx:i386
->>>>>>> 2415281 (feat: split into sdk and platform):platform/mesa/Containerfile
