@@ -1,4 +1,4 @@
-FROM ghcr.io/containerpak/base-sdk:latest
+FROM ghcr.io/containerpak/base-sdk:main
 #FROM cpak/base-sdk
 
 RUN dpkg --add-architecture i386 && \

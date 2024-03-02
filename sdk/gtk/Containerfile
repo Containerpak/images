@@ -1,4 +1,4 @@
-FROM ghcr.io/containerpak/mesa-sdk:latest
+FROM ghcr.io/containerpak/mesa-sdk:main
 #FROM cpak/mesa-sdk
 
 RUN apt install -y libgtk-4-dev libadwaita-1-dev libwebkit2gtk-4.1-dev libgweather-4-dev \
