@@ -2,57 +2,81 @@ name: Build and publish
 
 on:
   workflow_dispatch: {}
-  
+
 env:
   REGISTRY_USER: ${{ github.actor }}
   REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
-    
+
 permissions:
   contents: read
   packages: write
   id-token: write
-  
+
 jobs:
   build_base:
     runs-on: ubuntu-latest
-      
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      
-      - name: Build and publish base image
+
+      - name: SDK Base
         run: |
+          cd sdk
+          docker image build -f base/Containerfile --tag ghcr.io/containerpak/base-sdk:main .
+          docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
+          docker image push "ghcr.io/containerpak/base-sdk:main"
+
+      - name: Platform Base
+        run: |
+          cd platform
           docker image build -f base/Containerfile --tag ghcr.io/containerpak/base:main .
           docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
           docker image push "ghcr.io/containerpak/base:main"
           sleep 10
-      
+
   build_mesa:
     needs: build_base
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      
-      - name: Build and publish mesa image
+
+      - name: SDK Mesa
         run: |
+          cd sdk
+          docker image build -f mesa/Containerfile --tag ghcr.io/containerpak/mesa-sdk:main .
+          docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
+          docker image push "ghcr.io/containerpak/mesa-sdk:main"
+
+      - name: Platform Mesa
+        run: |
+          cd platform
           docker image build -f mesa/Containerfile --tag ghcr.io/containerpak/mesa:main .
           docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
           docker image push "ghcr.io/containerpak/mesa:main"
           sleep 10
-      
+
   build_gtk:
     needs: build_mesa
     runs-on: ubuntu-latest
-      
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      
-      - name: Build and publish gtk image
+
+      - name: SDK GTK
         run: |
+          cd sdk
+          docker image build -f gtk/Containerfile --tag ghcr.io/containerpak/gtk-sdk:main .
+          docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
+          docker image push "ghcr.io/containerpak/gtk-sdk:main"
+
+      - name: Platform GTK
+        run: |
+          cd platform
           docker image build -f gtk/Containerfile --tag ghcr.io/containerpak/gtk:main .
           docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
           docker image push "ghcr.io/containerpak/gtk:main"
-              
+          sleep 10

@@ -1,0 +1,8 @@
+FROM ghcr.io/containerpak/base-sdk:latest
+#FROM cpak/base-sdk
+
+RUN dpkg --add-architecture i386 && \
+    apt install -y libvulkan-dev mesa-common-dev \
+    libegl1-mesa-dev libgles2-mesa-dev libgl1-mesa-dev libglvnd-dev \
+    libglx-mesa0 libglx-dev libgl1-mesa-glx libgl1-mesa-dri \
+    libgl1-mesa-dri:i386 libgl1:i386 libgl1-mesa-glx:i386
