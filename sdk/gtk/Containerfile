@@ -2,5 +2,4 @@ FROM ghcr.io/containerpak/mesa-sdk:main
 #FROM cpak/mesa-sdk
 
 RUN apt install -y libgtk-4-dev libadwaita-1-dev libwebkit2gtk-4.1-dev libgweather-4-dev \
-    librsvg2-dev libgtk-3-dev \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    librsvg2-dev libgtk-3-dev
