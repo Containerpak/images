@@ -1,4 +1,6 @@
 FROM ubuntu:23.04
 
-RUN apt update && apt install -y build-essential libtool autoconf \
+RUN dpkg --add-architecture i386 && \
+    apt update && \
+    apt install -y build-essential libtool autoconf \
     automake cmake pkg-config meson ninja-build

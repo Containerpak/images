@@ -3,7 +3,6 @@ FROM ghcr.io/containerpak/base:main
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN dpkg --add-architecture i386 && \
-    apt install -y \
+RUN apt install -y \
     libegl1-mesa libgl1-mesa-glx libwayland-egl1-mesa libvulkan1 mesa-vulkan-drivers vulkan-tools mesa-utils mesa-utils-extra libc6-i386 \
     libgl1-mesa-dri:i386 libgl1:i386 libgl1-mesa-glx:i386
