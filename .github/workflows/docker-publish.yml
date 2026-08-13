@@ -18,73 +18,84 @@ env:
 permissions:
   contents: read
   packages: write
-  id-token: write
 
 jobs:
   build_base:
     runs-on: ubuntu-latest
+    container:
+      image: quay.io/podman/stable@sha256:663e0dbf407987b7db3f20d3588c283a8228db17b282d2029a482d4d47e36964
+      options: --privileged
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Login to GHCR
+        run: echo "${{ env.REGISTRY_PASSWORD }}" | podman login ghcr.io --username "${{ env.REGISTRY_USER }}" --password-stdin
 
       - name: SDK Base
         run: |
           cd sdk
-          docker image build -f base/Containerfile --tag ghcr.io/containerpak/base-sdk:main .
-          docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
-          docker image push "ghcr.io/containerpak/base-sdk:main"
+          podman build --format oci -f base/Containerfile --tag ghcr.io/containerpak/base-sdk:main .
+          podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/base-sdk:main"
 
       - name: Platform Base
         run: |
           cd platform
-          docker image build -f base/Containerfile --tag ghcr.io/containerpak/base:main .
-          docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
-          docker image push "ghcr.io/containerpak/base:main"
+          podman build --format oci -f base/Containerfile --tag ghcr.io/containerpak/base:main .
+          podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/base:main"
           sleep 10
 
   build_mesa:
     needs: build_base
     runs-on: ubuntu-latest
+    container:
+      image: quay.io/podman/stable@sha256:663e0dbf407987b7db3f20d3588c283a8228db17b282d2029a482d4d47e36964
+      options: --privileged
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Login to GHCR
+        run: echo "${{ env.REGISTRY_PASSWORD }}" | podman login ghcr.io --username "${{ env.REGISTRY_USER }}" --password-stdin
 
       - name: SDK Mesa
         run: |
           cd sdk
-          docker image build -f mesa/Containerfile --tag ghcr.io/containerpak/mesa-sdk:main .
-          docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
-          docker image push "ghcr.io/containerpak/mesa-sdk:main"
+          podman build --format oci -f mesa/Containerfile --tag ghcr.io/containerpak/mesa-sdk:main .
+          podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/mesa-sdk:main"
 
       - name: Platform Mesa
         run: |
           cd platform
-          docker image build -f mesa/Containerfile --tag ghcr.io/containerpak/mesa:main .
-          docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
-          docker image push "ghcr.io/containerpak/mesa:main"
+          podman build --format oci -f mesa/Containerfile --tag ghcr.io/containerpak/mesa:main .
+          podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/mesa:main"
           sleep 10
 
   build_gtk:
     needs: build_mesa
     runs-on: ubuntu-latest
+    container:
+      image: quay.io/podman/stable@sha256:663e0dbf407987b7db3f20d3588c283a8228db17b282d2029a482d4d47e36964
+      options: --privileged
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Login to GHCR
+        run: echo "${{ env.REGISTRY_PASSWORD }}" | podman login ghcr.io --username "${{ env.REGISTRY_USER }}" --password-stdin
 
       - name: SDK GTK
         run: |
           cd sdk
-          docker image build -f gtk/Containerfile --tag ghcr.io/containerpak/gtk-sdk:main .
-          docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
-          docker image push "ghcr.io/containerpak/gtk-sdk:main"
+          podman build --format oci -f gtk/Containerfile --tag ghcr.io/containerpak/gtk-sdk:main .
+          podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/gtk-sdk:main"
 
       - name: Platform GTK
         run: |
           cd platform
-          docker image build -f gtk/Containerfile --tag ghcr.io/containerpak/gtk:main .
-          docker login ghcr.io -u ${{ env.REGISTRY_USER }} -p ${{ env.REGISTRY_PASSWORD }}
-          docker image push "ghcr.io/containerpak/gtk:main"
+          podman build --format oci -f gtk/Containerfile --tag ghcr.io/containerpak/gtk:main .
+          podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/gtk:main"
           sleep 10
