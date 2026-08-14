@@ -1,0 +1,14 @@
+FROM ghcr.io/containerpak/base-sdk:main
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y \
+        libegl1-mesa-dev \
+        libgles2-mesa-dev \
+        libgl1-mesa-dev \
+        libglvnd-dev \
+        libglx-dev \
+        libvulkan-dev \
+        mesa-common-dev && \
+    cpak-clean-junk

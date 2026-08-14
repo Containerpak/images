@@ -1,0 +1,7 @@
+FROM ghcr.io/containerpak/adwaita:main
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y libwebkitgtk-6.0-4 && \
+    cpak-clean-junk

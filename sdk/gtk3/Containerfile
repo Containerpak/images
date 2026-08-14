@@ -1,0 +1,7 @@
+FROM ghcr.io/containerpak/mesa64-sdk:main
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y libgtk-3-dev && \
+    cpak-clean-junk

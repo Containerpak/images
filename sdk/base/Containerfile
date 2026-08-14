@@ -1,6 +1,15 @@
-FROM ubuntu:26.04
+FROM ghcr.io/containerpak/base:main
 
-RUN dpkg --add-architecture i386 && \
-    apt update && \
-    apt install -y build-essential libtool autoconf \
-    automake cmake pkg-config meson ninja-build
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y \
+        autoconf \
+        automake \
+        build-essential \
+        cmake \
+        libtool \
+        meson \
+        ninja-build \
+        pkg-config && \
+    cpak-clean-junk

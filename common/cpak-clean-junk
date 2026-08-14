@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -eu
+
+apt-get clean
+rm -rf /var/lib/apt/lists/*
+rm -rf /var/cache/apt/archives/*.deb /var/cache/apt/*.bin
+rm -rf /var/cache/debconf/*-old /var/lib/dpkg/*-old
+rm -rf /var/log/apt/* /var/log/dpkg.log /var/log/alternatives.log
+rm -rf /tmp/* /var/tmp/*
+mkdir -p /var/lib/apt/lists/partial
+mkdir -p /var/cache/apt/archives/partial
+mkdir -p /var/log/apt

@@ -1,0 +1,7 @@
+FROM ghcr.io/containerpak/gtk3-sdk:main
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y libwebkit2gtk-4.1-dev && \
+    cpak-clean-junk

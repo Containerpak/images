@@ -1,0 +1,14 @@
+FROM ghcr.io/containerpak/base:main
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y \
+        fonts-noto-color-emoji \
+        fonts-noto-core \
+        libegl1 \
+        libgl1 \
+        libgl1-mesa-dri \
+        libwayland-egl1 \
+        mesa-vulkan-drivers && \
+    cpak-clean-junk
