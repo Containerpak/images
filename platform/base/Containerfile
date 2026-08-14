@@ -5,4 +5,6 @@ ARG DEBIAN_FRONTEND=noninteractive
 COPY common/cpak-apt.conf /etc/apt/apt.conf.d/90cpak
 COPY --chmod=0755 common/cpak-clean-junk /usr/bin/cpak-clean-junk
 
-RUN cpak-clean-junk
+RUN apt-get update && \
+    apt-get install -y ca-certificates && \
+    cpak-clean-junk

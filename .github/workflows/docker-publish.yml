@@ -48,6 +48,7 @@ jobs:
 
           podman pull docker.io/library/ubuntu:26.04
           build base platform/base/Containerfile
+          podman run --rm ghcr.io/containerpak/base:main test -s /etc/ssl/certs/ca-certificates.crt
           build mesa64 platform/mesa64/Containerfile
           build mesa-multilib platform/mesa-multilib/Containerfile
           build mesa platform/mesa/Containerfile
