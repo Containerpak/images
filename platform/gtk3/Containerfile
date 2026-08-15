@@ -4,6 +4,8 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
     apt-get install -y \
+        libasound2t64 \
         libgtk-3-0t64 \
+        libpulse0 \
         librsvg2-common && \
     cpak-clean-junk
