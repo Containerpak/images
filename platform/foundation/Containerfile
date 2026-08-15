@@ -1,0 +1,17 @@
+ARG UBUNTU_IMAGE=docker.io/library/ubuntu:26.04
+FROM ${UBUNTU_IMAGE}
+
+ARG DEBIAN_FRONTEND=noninteractive
+ARG UBUNTU_SNAPSHOT
+
+COPY common/cpak-apt.conf /etc/apt/apt.conf.d/90cpak
+COPY --chmod=0755 common/cpak-clean-junk /usr/bin/cpak-clean-junk
+
+RUN test -n "${UBUNTU_SNAPSHOT}" && \
+    printf 'APT::Snapshot "%s";\n' "${UBUNTU_SNAPSHOT}" > /etc/apt/apt.conf.d/50cpak-snapshot && \
+    printf 'Acquire::https::snapshot.ubuntu.com::Verify-Peer "false";\n' > /etc/apt/apt.conf.d/49cpak-bootstrap-tls && \
+    apt-get update && \
+    apt-get install -y ca-certificates && \
+    rm /etc/apt/apt.conf.d/49cpak-bootstrap-tls && \
+    apt-get update && \
+    cpak-clean-junk

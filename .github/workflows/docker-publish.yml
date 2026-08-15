@@ -9,8 +9,6 @@ on:
       - 'common/**'
       - 'platform/**'
       - 'sdk/**'
-  schedule:
-    - cron: '0 3 * * 1'
 
 env:
   REGISTRY_USER: ${{ github.actor }}
@@ -41,14 +39,34 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          source platform/ubuntu.env
 
           build() {
-            podman build --format oci --pull=never --file "$2" --tag "ghcr.io/containerpak/$1:main" .
+            podman build --format oci --pull=never --timestamp "$PLATFORM_EPOCH" --file "$2" --tag "ghcr.io/containerpak/$1:main" .
           }
 
-          podman pull docker.io/library/ubuntu:26.04
+          podman pull "$UBUNTU_IMAGE"
+          podman build \
+            --format oci \
+            --pull=never \
+            --squash-all \
+            --timestamp "$PLATFORM_EPOCH" \
+            --build-arg "UBUNTU_IMAGE=$UBUNTU_IMAGE" \
+            --build-arg "UBUNTU_SNAPSHOT=$UBUNTU_SNAPSHOT" \
+            --label "io.containerpak.platform.version=$PLATFORM_VERSION" \
+            --label "io.containerpak.ubuntu.image=$UBUNTU_IMAGE" \
+            --label "io.containerpak.ubuntu.snapshot=$UBUNTU_SNAPSHOT" \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --file platform/foundation/Containerfile \
+            --tag ghcr.io/containerpak/foundation:main \
+            .
+          test "$(podman image inspect --format '{{len .RootFS.Layers}}' ghcr.io/containerpak/foundation:main)" -eq 1
           build base platform/base/Containerfile
           podman run --rm ghcr.io/containerpak/base:main test -s /etc/ssl/certs/ca-certificates.crt
+          podman run --rm ghcr.io/containerpak/base:main grep -Fqx "APT::Snapshot \"$UBUNTU_SNAPSHOT\";" /etc/apt/apt.conf.d/50cpak-snapshot
+          podman run --rm ghcr.io/containerpak/base:main test -s /usr/share/doc/apt/copyright
+          test -z "$(podman run --rm ghcr.io/containerpak/base:main find /usr/share/doc -type f ! -name copyright -print -quit)"
+          test "$(podman image inspect --format '{{len .RootFS.Layers}}' ghcr.io/containerpak/base:main)" -eq 1
           build mesa64 platform/mesa64/Containerfile
           build mesa-multilib platform/mesa-multilib/Containerfile
           build mesa platform/mesa/Containerfile
@@ -63,14 +81,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          source platform/ubuntu.env
 
-          images=(base mesa64 mesa-multilib mesa gtk3 gtk4 adwaita webkitgtk webkitgtk6 gtk)
+          images=(foundation base mesa64 mesa-multilib mesa gtk3 gtk4 adwaita webkitgtk webkitgtk6 gtk)
           revision="sha-${GITHUB_SHA::12}"
+          release="ubuntu-$PLATFORM_VERSION"
 
           for image in "${images[@]}"; do
             podman tag "ghcr.io/containerpak/$image:main" "ghcr.io/containerpak/$image:$revision"
+            podman tag "ghcr.io/containerpak/$image:main" "ghcr.io/containerpak/$image:$release"
             podman tag "ghcr.io/containerpak/$image:main" "ghcr.io/containerpak/$image:ubuntu-26.04"
             podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/$image:$revision"
+            podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/$image:$release"
             podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/$image:ubuntu-26.04"
           done
 
@@ -95,9 +117,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          source platform/ubuntu.env
 
           build() {
-            podman build --format oci --pull=never --file "$2" --tag "ghcr.io/containerpak/$1:main" .
+            podman build --format oci --pull=never --timestamp "$PLATFORM_EPOCH" --file "$2" --tag "ghcr.io/containerpak/$1:main" .
           }
 
           podman pull ghcr.io/containerpak/base:main
@@ -113,14 +136,18 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          source platform/ubuntu.env
 
           images=(base-sdk mesa64-sdk mesa-sdk gtk3-sdk gtk4-sdk webkitgtk-sdk gtk-sdk)
           revision="sha-${GITHUB_SHA::12}"
+          release="ubuntu-$PLATFORM_VERSION"
 
           for image in "${images[@]}"; do
             podman tag "ghcr.io/containerpak/$image:main" "ghcr.io/containerpak/$image:$revision"
+            podman tag "ghcr.io/containerpak/$image:main" "ghcr.io/containerpak/$image:$release"
             podman tag "ghcr.io/containerpak/$image:main" "ghcr.io/containerpak/$image:ubuntu-26.04"
             podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/$image:$revision"
+            podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/$image:$release"
             podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/$image:ubuntu-26.04"
           done
 
