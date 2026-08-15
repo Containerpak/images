@@ -1,0 +1,13 @@
+FROM ghcr.io/containerpak/webkitgtk:main
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y \
+        dbus \
+        fonts-noto \
+        libadwaita-1-0 \
+        libdbus-1-3 \
+        libgweather-4-0 \
+        libgtk-4-1 && \
+    cpak-clean-junk

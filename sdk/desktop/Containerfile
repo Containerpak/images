@@ -1,0 +1,11 @@
+FROM ghcr.io/containerpak/webkitgtk-sdk:main
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y \
+        libadwaita-1-dev \
+        libgweather-4-dev \
+        libgtk-4-dev \
+        librsvg2-dev && \
+    cpak-clean-junk

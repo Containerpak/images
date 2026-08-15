@@ -75,7 +75,10 @@ jobs:
           build adwaita platform/adwaita/Containerfile
           build webkitgtk platform/webkitgtk/Containerfile
           build webkitgtk6 platform/webkitgtk6/Containerfile
+          build desktop platform/desktop/Containerfile
           build gtk platform/gtk/Containerfile
+          test "$(podman image inspect --format '{{json .RootFS.Layers}}' ghcr.io/containerpak/desktop:main)" = \
+            "$(podman image inspect --format '{{json .RootFS.Layers}}' ghcr.io/containerpak/gtk:main)"
 
       - name: Publish platform images
         shell: bash
@@ -83,7 +86,7 @@ jobs:
           set -euo pipefail
           source platform/ubuntu.env
 
-          images=(foundation base mesa64 mesa-multilib mesa gtk3 gtk4 adwaita webkitgtk webkitgtk6 gtk)
+          images=(foundation base mesa64 mesa-multilib mesa gtk3 gtk4 adwaita webkitgtk webkitgtk6 desktop gtk)
           revision="sha-${GITHUB_SHA::12}"
           release="ubuntu-$PLATFORM_VERSION"
 
@@ -130,7 +133,10 @@ jobs:
           build gtk3-sdk sdk/gtk3/Containerfile
           build gtk4-sdk sdk/gtk4/Containerfile
           build webkitgtk-sdk sdk/webkitgtk/Containerfile
+          build desktop-sdk sdk/desktop/Containerfile
           build gtk-sdk sdk/gtk/Containerfile
+          test "$(podman image inspect --format '{{json .RootFS.Layers}}' ghcr.io/containerpak/desktop-sdk:main)" = \
+            "$(podman image inspect --format '{{json .RootFS.Layers}}' ghcr.io/containerpak/gtk-sdk:main)"
 
       - name: Publish SDK images
         shell: bash
@@ -138,7 +144,7 @@ jobs:
           set -euo pipefail
           source platform/ubuntu.env
 
-          images=(base-sdk mesa64-sdk mesa-sdk gtk3-sdk gtk4-sdk webkitgtk-sdk gtk-sdk)
+          images=(base-sdk mesa64-sdk mesa-sdk gtk3-sdk gtk4-sdk webkitgtk-sdk desktop-sdk gtk-sdk)
           revision="sha-${GITHUB_SHA::12}"
           release="ubuntu-$PLATFORM_VERSION"
 

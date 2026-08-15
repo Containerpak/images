@@ -1,16 +1,1 @@
-FROM ghcr.io/containerpak/mesa:main
-
-ARG DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && \
-    apt-get install -y \
-        dbus \
-        fonts-noto \
-        libadwaita-1-0 \
-        libdbus-1-3 \
-        libgweather-4-0 \
-        libgtk-4-1 \
-        librsvg2-common \
-        libwayland-cursor0 \
-        libwebkit2gtk-4.1-0 && \
-    cpak-clean-junk
+FROM ghcr.io/containerpak/desktop:main
