@@ -16,3 +16,4 @@ rm -rf /tmp/* /var/tmp/*
 mkdir -p /var/lib/apt/lists/partial
 mkdir -p /var/cache/apt/archives/partial
 mkdir -p /var/log/apt
+mkdir -p /usr/share/man/man1

@@ -66,6 +66,7 @@ jobs:
           podman run --rm ghcr.io/containerpak/base:main test -s /etc/ssl/certs/ca-certificates.crt
           podman run --rm ghcr.io/containerpak/base:main grep -Fqx "APT::Snapshot \"$UBUNTU_SNAPSHOT\";" /etc/apt/apt.conf.d/50cpak-snapshot
           podman run --rm ghcr.io/containerpak/base:main test -s /usr/share/doc/apt/copyright
+          podman run --rm ghcr.io/containerpak/base:main test -d /usr/share/man/man1
           test -z "$(podman run --rm ghcr.io/containerpak/base:main find /usr/share/doc -type f ! -name copyright -print -quit)"
           test "$(podman image inspect --format '{{len .RootFS.Layers}}' ghcr.io/containerpak/base:main)" -eq 1
           build locales platform/locales/Containerfile
