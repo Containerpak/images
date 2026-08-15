@@ -1,0 +1,11 @@
+FROM ghcr.io/containerpak/foundation:main AS source
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get install -y locales-all && \
+    cpak-clean-junk
+
+FROM scratch
+
+COPY --from=source /usr/lib/locale/ /usr/lib/locale/

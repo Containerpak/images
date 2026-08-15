@@ -54,6 +54,7 @@ jobs:
             --build-arg "UBUNTU_IMAGE=$UBUNTU_IMAGE" \
             --build-arg "UBUNTU_SNAPSHOT=$UBUNTU_SNAPSHOT" \
             --label "io.containerpak.platform.version=$PLATFORM_VERSION" \
+            --label "io.containerpak.locale.image=ghcr.io/containerpak/locales:ubuntu-$PLATFORM_VERSION" \
             --label "io.containerpak.ubuntu.image=$UBUNTU_IMAGE" \
             --label "io.containerpak.ubuntu.snapshot=$UBUNTU_SNAPSHOT" \
             --label "org.opencontainers.image.revision=$GITHUB_SHA" \
@@ -67,6 +68,10 @@ jobs:
           podman run --rm ghcr.io/containerpak/base:main test -s /usr/share/doc/apt/copyright
           test -z "$(podman run --rm ghcr.io/containerpak/base:main find /usr/share/doc -type f ! -name copyright -print -quit)"
           test "$(podman image inspect --format '{{len .RootFS.Layers}}' ghcr.io/containerpak/base:main)" -eq 1
+          build locales platform/locales/Containerfile
+          locale_container="$(podman create ghcr.io/containerpak/locales:main true)"
+          podman export "$locale_container" | tar -tf - | grep -Fx usr/lib/locale/pt_BR.utf8/LC_CTYPE >/dev/null
+          podman rm "$locale_container"
           build mesa64 platform/mesa64/Containerfile
           build mesa-multilib platform/mesa-multilib/Containerfile
           build mesa platform/mesa/Containerfile
@@ -86,7 +91,7 @@ jobs:
           set -euo pipefail
           source platform/ubuntu.env
 
-          images=(foundation base mesa64 mesa-multilib mesa gtk3 gtk4 adwaita webkitgtk webkitgtk6 desktop gtk)
+          images=(foundation base locales mesa64 mesa-multilib mesa gtk3 gtk4 adwaita webkitgtk webkitgtk6 desktop gtk)
           revision="sha-${GITHUB_SHA::12}"
           release="ubuntu-$PLATFORM_VERSION"
 
