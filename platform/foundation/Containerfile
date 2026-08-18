@@ -7,6 +7,16 @@ ARG UBUNTU_SNAPSHOT
 COPY common/cpak-apt.conf /etc/apt/apt.conf.d/90cpak
 COPY --chmod=0755 common/cpak-clean-junk /usr/bin/cpak-clean-junk
 
+# The Ubuntu image ships a dpkg configuration that drops every translation, so
+# an application installed here would have no message catalogue at all and no
+# locale the host passes in could give it one. What cpak leaves out is decided
+# by cpak-apt.conf, which keeps translations on purpose, and this puts the two
+# in agreement. It runs before the first apt-get install: a package installed
+# under the exclusion never wrote its catalogues, and nothing later puts them
+# back.
+RUN find /etc/dpkg/dpkg.cfg.d -type f -exec sed -i '/^path-exclude=\/usr\/share\/locale\//d' {} + && \
+    ! grep -rq '^path-exclude=/usr/share/locale/' /etc/dpkg/dpkg.cfg.d
+
 RUN test -n "${UBUNTU_SNAPSHOT}" && \
     printf 'APT::Snapshot "%s";\n' "${UBUNTU_SNAPSHOT}" > /etc/apt/apt.conf.d/50cpak-snapshot && \
     printf 'Acquire::https::snapshot.ubuntu.com::Verify-Peer "false";\n' > /etc/apt/apt.conf.d/49cpak-bootstrap-tls && \
