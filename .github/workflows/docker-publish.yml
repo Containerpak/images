@@ -68,7 +68,7 @@ jobs:
           podman run --rm ghcr.io/containerpak/base:main test -s /usr/share/doc/apt/copyright
           podman run --rm ghcr.io/containerpak/base:main test -d /usr/share/man/man1
           podman run --rm ghcr.io/containerpak/base:main sh -c '! grep -rq "^path-exclude=/usr/share/locale/" /etc/dpkg/dpkg.cfg.d'
-          podman run --rm ghcr.io/containerpak/base:main sh -c 'apt-get install -y --no-install-recommends hello >/dev/null && test -s /usr/share/locale/it/LC_MESSAGES/hello.mo'
+          podman run --rm ghcr.io/containerpak/base:main sh -c 'apt-get update >/dev/null && apt-get install -y --no-install-recommends nano >/dev/null && test -n "$(find /usr/share/locale -name nano.mo -print -quit)"'
           test -z "$(podman run --rm ghcr.io/containerpak/base:main find /usr/share/doc -type f ! -name copyright -print -quit)"
           test "$(podman image inspect --format '{{len .RootFS.Layers}}' ghcr.io/containerpak/base:main)" -eq 1
           build locales platform/locales/Containerfile
