@@ -199,35 +199,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          source platform/ubuntu.env
           podman build \
             --format oci \
-            --build-arg "UBUNTU_IMAGE=$UBUNTU_IMAGE" \
-            --build-arg "UBUNTU_SNAPSHOT=$UBUNTU_SNAPSHOT" \
             --label "org.opencontainers.image.revision=$GITHUB_SHA" \
             --file ci/adapters/Containerfile \
             --tag "ghcr.io/containerpak/ci-adapters:main-${{ matrix.arch }}" .
           podman push "ghcr.io/containerpak/ci-adapters:main-${{ matrix.arch }}"
-
-  ci-manifest:
-    needs: ci
-    runs-on: ubuntu-latest
-    container:
-      image: quay.io/podman/stable@sha256:663e0dbf407987b7db3f20d3588c283a8228db17b282d2029a482d4d47e36964
-      options: --privileged
-
-    steps:
-      - name: Login to GHCR
-        run: echo "${{ env.REGISTRY_PASSWORD }}" | podman login ghcr.io --username "${{ env.REGISTRY_USER }}" --password-stdin
-
-      - name: Join the two architectures under one tag
-        shell: bash
-        run: |
-          set -euo pipefail
-          podman manifest create ghcr.io/containerpak/ci-adapters:main
-          for arch in amd64 arm64; do
-            podman manifest add ghcr.io/containerpak/ci-adapters:main \
-              "docker://ghcr.io/containerpak/ci-adapters:main-${arch}"
-          done
-          podman manifest push --all ghcr.io/containerpak/ci-adapters:main \
-            docker://ghcr.io/containerpak/ci-adapters:main
