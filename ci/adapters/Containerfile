@@ -5,25 +5,33 @@
 # a time, twice, and never said what it was waiting for. Baking them here turns
 # that into a pull of an image that either exists or does not.
 #
-# This is a build image and not a cpak runtime image: it keeps the headers,
-# the documentation and the package lists that a runtime image throws away.
+# This is a build image and not a cpak runtime image: it keeps the headers and
+# the package lists a runtime image throws away, and it never runs
+# cpak-clean-junk.
 ARG UBUNTU_IMAGE
 FROM ${UBUNTU_IMAGE}
 
 ARG UBUNTU_SNAPSHOT
 
-RUN printf 'APT::Get::Assume-Yes "true";\nAPT::Install-Recommends "false";\nAcquire::Retries "3";\n' > /etc/apt/apt.conf.d/90cpak-ci && \
-    apt-get -o APT::Snapshot="${UBUNTU_SNAPSHOT}" update && \
-    apt-get -o APT::Snapshot="${UBUNTU_SNAPSHOT}" install \
+# The snapshot is pinned the same way the platform pins it, so the release
+# compiles against the toolkits the packages were built with. Bootstrapping it
+# needs the certificates the snapshot host is verified with, which is why the
+# first update runs without that check and the second one with it.
+RUN test -n "${UBUNTU_SNAPSHOT}" && \
+    printf 'APT::Snapshot "%s";\n' "${UBUNTU_SNAPSHOT}" > /etc/apt/apt.conf.d/50cpak-snapshot && \
+    printf 'Acquire::https::snapshot.ubuntu.com::Verify-Peer "false";\n' > /etc/apt/apt.conf.d/49cpak-bootstrap-tls && \
+    apt-get update && \
+    apt-get install -y ca-certificates && \
+    rm /etc/apt/apt.conf.d/49cpak-bootstrap-tls && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
         build-essential \
         pkg-config \
         git \
-        ca-certificates \
         libgtk-3-dev \
         libadwaita-1-dev \
-        qt6-base-dev && \
-    rm -rf /var/lib/apt/lists/*
+        qt6-base-dev
 
-# The release fails on a missing header rather than on a link error, and it
-# fails here where the image is built instead of on the machine that uses it.
+# The release fails on a missing header here, where the image is built, rather
+# than on the machine that uses it.
 RUN pkg-config --exists gtk+-3.0 libadwaita-1 Qt6Widgets
