@@ -1,0 +1,29 @@
+# The image the cpak release builds in.
+#
+# It exists so that a release never runs apt. Installing the GTK and Qt
+# development packages on a shared runner hung the release for forty minutes at
+# a time, twice, and never said what it was waiting for. Baking them here turns
+# that into a pull of an image that either exists or does not.
+#
+# This is a build image and not a cpak runtime image: it keeps the headers,
+# the documentation and the package lists that a runtime image throws away.
+ARG UBUNTU_IMAGE
+FROM ${UBUNTU_IMAGE}
+
+ARG UBUNTU_SNAPSHOT
+
+RUN printf 'APT::Get::Assume-Yes "true";\nAPT::Install-Recommends "false";\nAcquire::Retries "3";\n' > /etc/apt/apt.conf.d/90cpak-ci && \
+    apt-get -o APT::Snapshot="${UBUNTU_SNAPSHOT}" update && \
+    apt-get -o APT::Snapshot="${UBUNTU_SNAPSHOT}" install \
+        build-essential \
+        pkg-config \
+        git \
+        ca-certificates \
+        libgtk-3-dev \
+        libadwaita-1-dev \
+        qt6-base-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# The release fails on a missing header rather than on a link error, and it
+# fails here where the image is built instead of on the machine that uses it.
+RUN pkg-config --exists gtk+-3.0 libadwaita-1 Qt6Widgets
