@@ -1,4 +1,5 @@
-FROM ghcr.io/containerpak/mesa-multilib:main
+ARG MESA_IMAGE=ghcr.io/containerpak/mesa-multilib:main
+FROM ${MESA_IMAGE}
 
 ARG DEBIAN_FRONTEND=noninteractive
 

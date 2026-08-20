@@ -51,7 +51,10 @@ jobs:
           source platform/ubuntu.env
 
           build() {
-            podman build --format oci --pull=never --timestamp "$PLATFORM_EPOCH" --file "$2" --tag "ghcr.io/containerpak/$1:main" .
+            local image="$1"
+            local file="$2"
+            shift 2
+            podman build --format oci --pull=never --timestamp "$PLATFORM_EPOCH" "$@" --file "$file" --tag "ghcr.io/containerpak/$image:main" .
           }
 
           podman pull "$UBUNTU_IMAGE"
@@ -73,7 +76,7 @@ jobs:
           test "$(podman image inspect --format '{{len .RootFS.Layers}}' ghcr.io/containerpak/foundation:main)" -eq 1
           build base platform/base/Containerfile
           podman run --rm ghcr.io/containerpak/base:main test -s /etc/ssl/certs/ca-certificates.crt
-          podman run --rm ghcr.io/containerpak/base:main grep -Fqx "APT::Snapshot \"$UBUNTU_SNAPSHOT\";" /etc/apt/apt.conf.d/50cpak-snapshot
+          podman run --rm ghcr.io/containerpak/base:main grep -Fqx "$UBUNTU_SNAPSHOT" /etc/cpak/ubuntu-snapshot
           podman run --rm ghcr.io/containerpak/base:main test -s /usr/share/doc/apt/copyright
           podman run --rm ghcr.io/containerpak/base:main test -d /usr/share/man/man1
           podman run --rm ghcr.io/containerpak/base:main sh -c '! grep -rq "^path-exclude=/usr/share/locale/" /etc/dpkg/dpkg.cfg.d'
@@ -85,8 +88,12 @@ jobs:
           podman export "$locale_container" | tar -tf - | grep -Fx usr/lib/locale/pt_BR.utf8/LC_CTYPE >/dev/null
           podman rm "$locale_container"
           build mesa64 platform/mesa64/Containerfile
-          build mesa-multilib platform/mesa-multilib/Containerfile
-          build mesa platform/mesa/Containerfile
+          mesa_image=ghcr.io/containerpak/mesa64:main
+          if [ "${{ matrix.arch }}" = amd64 ]; then
+            build mesa-multilib platform/mesa-multilib/Containerfile
+            mesa_image=ghcr.io/containerpak/mesa-multilib:main
+          fi
+          build mesa platform/mesa/Containerfile --build-arg "MESA_IMAGE=$mesa_image"
           build gtk3 platform/gtk3/Containerfile
           build gtk4 platform/gtk4/Containerfile
           build adwaita platform/adwaita/Containerfile
@@ -101,7 +108,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          images=(foundation base locales mesa64 mesa-multilib mesa gtk3 gtk4 adwaita webkitgtk webkitgtk6 desktop gtk)
+          images=(foundation base locales mesa64 mesa gtk3 gtk4 adwaita webkitgtk webkitgtk6 desktop gtk)
+          if [ "${{ matrix.arch }}" = amd64 ]; then
+            images+=(mesa-multilib)
+          fi
           for image in "${images[@]}"; do
             architecture="ghcr.io/containerpak/$image:main-${{ matrix.arch }}"
             podman tag "ghcr.io/containerpak/$image:main" "$architecture"
@@ -126,7 +136,7 @@ jobs:
         run: |
           set -euo pipefail
           source platform/ubuntu.env
-          images=(foundation base locales mesa64 mesa-multilib mesa gtk3 gtk4 adwaita webkitgtk webkitgtk6 desktop gtk)
+          images=(foundation base locales mesa64 mesa gtk3 gtk4 adwaita webkitgtk webkitgtk6 desktop gtk)
           revision="sha-${GITHUB_SHA::12}"
           release="ubuntu-$PLATFORM_VERSION"
           for image in "${images[@]}"; do
@@ -138,7 +148,17 @@ jobs:
               podman manifest push --all --format oci "$index" "docker://ghcr.io/containerpak/$image:$tag"
             done
             podman manifest rm "$index"
+            manifest="$(podman manifest inspect "ghcr.io/containerpak/$image:main")"
+            grep -q '"architecture": "amd64"' <<< "$manifest"
+            grep -q '"architecture": "arm64"' <<< "$manifest"
           done
+          index="localhost/mesa-multilib-index:$GITHUB_SHA"
+          podman manifest create "$index"
+          podman manifest add "$index" docker://ghcr.io/containerpak/mesa-multilib:main-amd64
+          for tag in main "$revision" "$release" ubuntu-26.04; do
+            podman manifest push --all --format oci "$index" "docker://ghcr.io/containerpak/mesa-multilib:$tag"
+          done
+          podman manifest rm "$index"
 
   sdk:
     needs: platform-index
@@ -168,13 +188,16 @@ jobs:
           source platform/ubuntu.env
 
           build() {
-            podman build --format oci --pull=never --timestamp "$PLATFORM_EPOCH" --file "$2" --tag "ghcr.io/containerpak/$1:main" .
+            local image="$1"
+            local file="$2"
+            shift 2
+            podman build --format oci --pull=never --timestamp "$PLATFORM_EPOCH" "$@" --file "$file" --tag "ghcr.io/containerpak/$image:main" .
           }
 
           podman pull ghcr.io/containerpak/base:main
           build base-sdk sdk/base/Containerfile
           build mesa64-sdk sdk/mesa64/Containerfile
-          build mesa-sdk sdk/mesa/Containerfile
+          build mesa-sdk sdk/mesa/Containerfile --build-arg "CPAK_ARCH=${{ matrix.arch }}"
           build gtk3-sdk sdk/gtk3/Containerfile
           build gtk4-sdk sdk/gtk4/Containerfile
           build webkitgtk-sdk sdk/webkitgtk/Containerfile
@@ -224,6 +247,9 @@ jobs:
               podman manifest push --all --format oci "$index" "docker://ghcr.io/containerpak/$image:$tag"
             done
             podman manifest rm "$index"
+            manifest="$(podman manifest inspect "ghcr.io/containerpak/$image:main")"
+            grep -q '"architecture": "amd64"' <<< "$manifest"
+            grep -q '"architecture": "arm64"' <<< "$manifest"
           done
 
   # The image the cpak release builds in, so that a release never runs apt on a

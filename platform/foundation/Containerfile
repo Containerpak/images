@@ -18,7 +18,9 @@ RUN find /etc/dpkg/dpkg.cfg.d -type f -exec sed -i '/^path-exclude=\/usr\/share\
     ! grep -rq '^path-exclude=/usr/share/locale/' /etc/dpkg/dpkg.cfg.d
 
 RUN test -n "${UBUNTU_SNAPSHOT}" && \
-    printf 'APT::Snapshot "%s";\n' "${UBUNTU_SNAPSHOT}" > /etc/apt/apt.conf.d/50cpak-snapshot && \
+    sed -i "s|^URIs: .*|URIs: https://snapshot.ubuntu.com/ubuntu/${UBUNTU_SNAPSHOT}/|" /etc/apt/sources.list.d/ubuntu.sources && \
+    install -d /etc/cpak && \
+    printf '%s\n' "${UBUNTU_SNAPSHOT}" > /etc/cpak/ubuntu-snapshot && \
     printf 'Acquire::https::snapshot.ubuntu.com::Verify-Peer "false";\n' > /etc/apt/apt.conf.d/49cpak-bootstrap-tls && \
     apt-get update && \
     apt-get install -y ca-certificates && \
