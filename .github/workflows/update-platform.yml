@@ -1,0 +1,37 @@
+name: Update Ubuntu platform
+
+on:
+  schedule:
+    - cron: "17 3 * * 3"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-ubuntu-platform
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Update platform lock
+        run: |
+          set -euo pipefail
+          python3 scripts/test-update-platform.py
+          python3 scripts/update-platform.py
+
+      - name: Publish update
+        run: |
+          set -euo pipefail
+          git diff --check
+          git diff --exit-code --quiet && exit 0
+          snapshot="$(sed -n 's/^UBUNTU_SNAPSHOT=//p' platform/ubuntu.env)"
+          git config user.name cpak-updater
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add platform/ubuntu.env
+          git commit -m "chore: update Ubuntu platform to $snapshot"
+          git push origin HEAD:main
