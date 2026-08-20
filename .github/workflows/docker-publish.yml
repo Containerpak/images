@@ -25,7 +25,15 @@ concurrency:
 
 jobs:
   platform:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     container:
       image: quay.io/podman/stable@sha256:663e0dbf407987b7db3f20d3588c283a8228db17b282d2029a482d4d47e36964
       options: --privileged
@@ -89,32 +97,60 @@ jobs:
           test "$(podman image inspect --format '{{json .RootFS.Layers}}' ghcr.io/containerpak/desktop:main)" = \
             "$(podman image inspect --format '{{json .RootFS.Layers}}' ghcr.io/containerpak/gtk:main)"
 
-      - name: Publish platform images
+      - name: Publish platform architecture
+        shell: bash
+        run: |
+          set -euo pipefail
+          images=(foundation base locales mesa64 mesa-multilib mesa gtk3 gtk4 adwaita webkitgtk webkitgtk6 desktop gtk)
+          for image in "${images[@]}"; do
+            architecture="ghcr.io/containerpak/$image:main-${{ matrix.arch }}"
+            podman tag "ghcr.io/containerpak/$image:main" "$architecture"
+            podman push --format oci --compression-format zstd:chunked --force-compression "$architecture"
+          done
+
+  platform-index:
+    needs: platform
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/podman/stable@sha256:663e0dbf407987b7db3f20d3588c283a8228db17b282d2029a482d4d47e36964
+      options: --privileged
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Login to GHCR
+        run: echo "${{ env.REGISTRY_PASSWORD }}" | podman login ghcr.io --username "${{ env.REGISTRY_USER }}" --password-stdin
+
+      - name: Publish platform indexes
         shell: bash
         run: |
           set -euo pipefail
           source platform/ubuntu.env
-
           images=(foundation base locales mesa64 mesa-multilib mesa gtk3 gtk4 adwaita webkitgtk webkitgtk6 desktop gtk)
           revision="sha-${GITHUB_SHA::12}"
           release="ubuntu-$PLATFORM_VERSION"
-
           for image in "${images[@]}"; do
-            podman tag "ghcr.io/containerpak/$image:main" "ghcr.io/containerpak/$image:$revision"
-            podman tag "ghcr.io/containerpak/$image:main" "ghcr.io/containerpak/$image:$release"
-            podman tag "ghcr.io/containerpak/$image:main" "ghcr.io/containerpak/$image:ubuntu-26.04"
-            podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/$image:$revision"
-            podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/$image:$release"
-            podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/$image:ubuntu-26.04"
-          done
-
-          for image in "${images[@]}"; do
-            podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/$image:main"
+            index="localhost/$image-index:$GITHUB_SHA"
+            podman manifest create "$index"
+            podman manifest add "$index" "docker://ghcr.io/containerpak/$image:main-amd64"
+            podman manifest add "$index" "docker://ghcr.io/containerpak/$image:main-arm64"
+            for tag in main "$revision" "$release" ubuntu-26.04; do
+              podman manifest push --all --format oci "$index" "docker://ghcr.io/containerpak/$image:$tag"
+            done
+            podman manifest rm "$index"
           done
 
   sdk:
-    needs: platform
-    runs-on: ubuntu-latest
+    needs: platform-index
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     container:
       image: quay.io/podman/stable@sha256:663e0dbf407987b7db3f20d3588c283a8228db17b282d2029a482d4d47e36964
       options: --privileged
@@ -147,27 +183,47 @@ jobs:
           test "$(podman image inspect --format '{{json .RootFS.Layers}}' ghcr.io/containerpak/desktop-sdk:main)" = \
             "$(podman image inspect --format '{{json .RootFS.Layers}}' ghcr.io/containerpak/gtk-sdk:main)"
 
-      - name: Publish SDK images
+      - name: Publish SDK architecture
+        shell: bash
+        run: |
+          set -euo pipefail
+          images=(base-sdk mesa64-sdk mesa-sdk gtk3-sdk gtk4-sdk webkitgtk-sdk desktop-sdk gtk-sdk)
+          for image in "${images[@]}"; do
+            architecture="ghcr.io/containerpak/$image:main-${{ matrix.arch }}"
+            podman tag "ghcr.io/containerpak/$image:main" "$architecture"
+            podman push --format oci --compression-format zstd:chunked --force-compression "$architecture"
+          done
+
+  sdk-index:
+    needs: sdk
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/podman/stable@sha256:663e0dbf407987b7db3f20d3588c283a8228db17b282d2029a482d4d47e36964
+      options: --privileged
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+
+      - name: Login to GHCR
+        run: echo "${{ env.REGISTRY_PASSWORD }}" | podman login ghcr.io --username "${{ env.REGISTRY_USER }}" --password-stdin
+
+      - name: Publish SDK indexes
         shell: bash
         run: |
           set -euo pipefail
           source platform/ubuntu.env
-
           images=(base-sdk mesa64-sdk mesa-sdk gtk3-sdk gtk4-sdk webkitgtk-sdk desktop-sdk gtk-sdk)
           revision="sha-${GITHUB_SHA::12}"
           release="ubuntu-$PLATFORM_VERSION"
-
           for image in "${images[@]}"; do
-            podman tag "ghcr.io/containerpak/$image:main" "ghcr.io/containerpak/$image:$revision"
-            podman tag "ghcr.io/containerpak/$image:main" "ghcr.io/containerpak/$image:$release"
-            podman tag "ghcr.io/containerpak/$image:main" "ghcr.io/containerpak/$image:ubuntu-26.04"
-            podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/$image:$revision"
-            podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/$image:$release"
-            podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/$image:ubuntu-26.04"
-          done
-
-          for image in "${images[@]}"; do
-            podman push --format oci --compression-format zstd:chunked --force-compression "ghcr.io/containerpak/$image:main"
+            index="localhost/$image-index:$GITHUB_SHA"
+            podman manifest create "$index"
+            podman manifest add "$index" "docker://ghcr.io/containerpak/$image:main-amd64"
+            podman manifest add "$index" "docker://ghcr.io/containerpak/$image:main-arm64"
+            for tag in main "$revision" "$release" ubuntu-26.04; do
+              podman manifest push --all --format oci "$index" "docker://ghcr.io/containerpak/$image:$tag"
+            done
+            podman manifest rm "$index"
           done
 
   # The image the cpak release builds in, so that a release never runs apt on a
