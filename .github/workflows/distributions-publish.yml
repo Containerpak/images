@@ -59,7 +59,7 @@ jobs:
       options: --privileged
 
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Login to GHCR
         run: echo "${{ env.REGISTRY_PASSWORD }}" | podman login ghcr.io --username "${{ env.REGISTRY_USER }}" --password-stdin
@@ -80,7 +80,7 @@ jobs:
           esac
 
           image="ghcr.io/containerpak/$IMAGE_NAME:main-$ARCHITECTURE"
-          timestamp="$(git log -1 --format=%ct -- distributions/Containerfile "distributions/$DISTRIBUTION.env")"
+          timestamp="$(git -c safe.directory="$GITHUB_WORKSPACE" log -1 --format=%ct -- distributions/Containerfile "distributions/$DISTRIBUTION.env")"
           podman pull "$BASE_IMAGE"
           podman build \
             --format oci \
@@ -119,7 +119,7 @@ jobs:
       options: --privileged
 
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
 
       - name: Login to GHCR
         run: echo "${{ env.REGISTRY_PASSWORD }}" | podman login ghcr.io --username "${{ env.REGISTRY_USER }}" --password-stdin
