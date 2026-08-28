@@ -1,0 +1,153 @@
+name: Build and publish distributions
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/distributions-publish.yml'
+      - 'distributions/**'
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: publish-distributions-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY_USER: ${{ github.actor }}
+  REGISTRY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distribution: ubuntu
+            architecture: amd64
+            runner: ubuntu-latest
+          - distribution: ubuntu
+            architecture: arm64
+            runner: ubuntu-24.04-arm
+          - distribution: fedora
+            architecture: amd64
+            runner: ubuntu-latest
+          - distribution: fedora
+            architecture: arm64
+            runner: ubuntu-24.04-arm
+          - distribution: debian
+            architecture: amd64
+            runner: ubuntu-latest
+          - distribution: debian
+            architecture: arm64
+            runner: ubuntu-24.04-arm
+          - distribution: archlinux
+            architecture: amd64
+            runner: ubuntu-latest
+          - distribution: opensuse
+            architecture: amd64
+            runner: ubuntu-latest
+          - distribution: opensuse
+            architecture: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    container:
+      image: quay.io/podman/stable@sha256:663e0dbf407987b7db3f20d3588c283a8228db17b282d2029a482d4d47e36964
+      options: --privileged
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Login to GHCR
+        run: echo "${{ env.REGISTRY_PASSWORD }}" | podman login ghcr.io --username "${{ env.REGISTRY_USER }}" --password-stdin
+
+      - name: Build and verify image
+        shell: bash
+        env:
+          DISTRIBUTION: ${{ matrix.distribution }}
+          ARCHITECTURE: ${{ matrix.architecture }}
+        run: |
+          set -euo pipefail
+          : "${DISTRIBUTION:?}" "${ARCHITECTURE:?}"
+          # shellcheck source=/dev/null
+          source "distributions/$DISTRIBUTION.env"
+          case " $ARCHITECTURES " in
+            *" $ARCHITECTURE "*) ;;
+            *) echo "$DISTRIBUTION does not support $ARCHITECTURE" >&2; exit 1 ;;
+          esac
+
+          image="ghcr.io/containerpak/$IMAGE_NAME:main-$ARCHITECTURE"
+          timestamp="$(git log -1 --format=%ct -- distributions/Containerfile "distributions/$DISTRIBUTION.env")"
+          podman pull "$BASE_IMAGE"
+          podman build \
+            --format oci \
+            --pull=never \
+            --timestamp "$timestamp" \
+            --build-arg "BASE_IMAGE=$BASE_IMAGE" \
+            --build-arg "DISTRIBUTION_ID=$IMAGE_NAME" \
+            --build-arg "DISTRIBUTION_TITLE=$IMAGE_TITLE" \
+            --build-arg "DISTRIBUTION_VERSION=$IMAGE_VERSION" \
+            --build-arg "SOURCE_REVISION=$GITHUB_SHA" \
+            --file distributions/Containerfile \
+            --tag "$image" \
+            .
+
+          podman run --rm "$image" /bin/sh -ec '
+            . /etc/os-release
+            test "$ID" = "$1"
+            if test -n "$2"; then
+              test "$VERSION_ID" = "$2"
+            fi
+            command -v /bin/bash
+            command -v "$3"
+          ' sh "$EXPECTED_ID" "$EXPECTED_VERSION" "$PACKAGE_MANAGER"
+          test "$(podman image inspect --format '{{ index .Labels "io.containerpak.kind" }}' "$image")" = distribution
+          podman push --format oci --compression-format zstd:chunked --force-compression "$image"
+
+  publish:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        distribution: [ubuntu, fedora, debian, archlinux, opensuse]
+    runs-on: ubuntu-latest
+    container:
+      image: quay.io/podman/stable@sha256:663e0dbf407987b7db3f20d3588c283a8228db17b282d2029a482d4d47e36964
+      options: --privileged
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Login to GHCR
+        run: echo "${{ env.REGISTRY_PASSWORD }}" | podman login ghcr.io --username "${{ env.REGISTRY_USER }}" --password-stdin
+
+      - name: Publish image index
+        shell: bash
+        env:
+          DISTRIBUTION: ${{ matrix.distribution }}
+        run: |
+          set -euo pipefail
+          : "${DISTRIBUTION:?}"
+          # shellcheck source=/dev/null
+          source "distributions/$DISTRIBUTION.env"
+          image="ghcr.io/containerpak/$IMAGE_NAME"
+          revision="sha-${GITHUB_SHA::12}"
+
+          for tag in main "$IMAGE_VERSION" "$revision"; do
+            index="cpak-$IMAGE_NAME-$tag"
+            podman manifest create "$index"
+            for architecture in $ARCHITECTURES; do
+              podman manifest add --arch "$architecture" "$index" "docker://$image:main-$architecture"
+            done
+            podman manifest push --all "$index" "docker://$image:$tag"
+          done
+
+          manifest="$(podman manifest inspect "docker://$image:main")"
+          for architecture in $ARCHITECTURES; do
+            jq -e --arg architecture "$architecture" '
+              any(.manifests[]; .platform.os == "linux" and .platform.architecture == $architecture)
+            ' <<<"$manifest" >/dev/null
+          done

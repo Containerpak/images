@@ -1,0 +1,17 @@
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+
+ARG DISTRIBUTION_ID
+ARG DISTRIBUTION_TITLE
+ARG DISTRIBUTION_VERSION
+ARG SOURCE_REVISION
+
+LABEL io.containerpak.kind="distribution" \
+      io.containerpak.distribution.id="${DISTRIBUTION_ID}" \
+      org.opencontainers.image.description="A persistent ${DISTRIBUTION_TITLE} environment for cpak" \
+      org.opencontainers.image.revision="${SOURCE_REVISION}" \
+      org.opencontainers.image.source="https://github.com/Containerpak/images" \
+      org.opencontainers.image.title="${DISTRIBUTION_TITLE}" \
+      org.opencontainers.image.version="${DISTRIBUTION_VERSION}"
+
+CMD ["/bin/bash"]
