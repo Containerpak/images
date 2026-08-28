@@ -145,7 +145,7 @@ jobs:
             podman manifest push --all "$index" "docker://$image:$tag"
           done
 
-          manifest="$(podman manifest inspect "docker://$image:main")"
+          manifest="$(podman manifest inspect "$image:main")"
           for architecture in $ARCHITECTURES; do
             jq -e --arg architecture "$architecture" '
               any(.manifests[]; .platform.os == "linux" and .platform.architecture == $architecture)
