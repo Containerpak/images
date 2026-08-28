@@ -147,7 +147,5 @@ jobs:
 
           manifest="$(podman manifest inspect "$image:main")"
           for architecture in $ARCHITECTURES; do
-            jq -e --arg architecture "$architecture" '
-              any(.manifests[]; .platform.os == "linux" and .platform.architecture == $architecture)
-            ' <<<"$manifest" >/dev/null
+            grep -Eq "\"architecture\"[[:space:]]*:[[:space:]]*\"$architecture\"" <<<"$manifest"
           done
