@@ -22,6 +22,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          repository: Containerpak/${{ matrix.distribution }}
+          path: package
       - uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62
 
       - name: Install cpak-sign
@@ -40,7 +44,10 @@ jobs:
           : "${DISTRIBUTION:?}"
           # shellcheck source=/dev/null
           source "distributions/$DISTRIBUTION.env"
-          image="ghcr.io/containerpak/$IMAGE_NAME"
+          manifest_image="$(jq -r '.image' package/cpak.json)"
+          image="${manifest_image%@*}"
+          test "$image" = "ghcr.io/containerpak/$IMAGE_NAME"
+          cd package
           platforms=0
           while IFS=$'\t' read -r os architecture digest; do
             test "$os" = linux
@@ -54,5 +61,5 @@ jobs:
             cosign sign-blob --yes --new-bundle-format=true --bundle "$bundle" "$state"
             cpak-sign attach --image "$image" --state "$state" --bundle "$bundle"
             platforms=$((platforms + 1))
-          done < <(docker buildx imagetools inspect --raw "$image:main" | jq -r '.manifests[] | [.platform.os, .platform.architecture, .digest] | @tsv')
+          done < <(docker buildx imagetools inspect --raw "$manifest_image" | jq -r '.manifests[] | [.platform.os, .platform.architecture, .digest] | @tsv')
           test "$platforms" -gt 0
